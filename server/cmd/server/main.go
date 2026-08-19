@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 func main() {
@@ -26,6 +27,16 @@ func main() {
 	// Basic middlewares
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+
+	// CORS configuration
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// Simple healthcheck route
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +81,42 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(todos)
+	})
+
+	router.Post("/api/todos", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Title string `json:"title"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		_, err := database.Exec("INSERT INTO todos (title) VALUES (?)", req.Title)
+		if err != nil {
+			http.Error(w, "Failed to create todo", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+	})
+
+	router.Put("/api/todos/{id}/toggle", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		_, err := database.Exec("UPDATE todos SET completed = NOT completed WHERE id = ?", id)
+		if err != nil {
+			http.Error(w, "Failed to update todo", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	router.Delete("/api/todos/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		_, err := database.Exec("DELETE FROM todos WHERE id = ?", id)
+		if err != nil {
+			http.Error(w, "Failed to delete todo", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	})
 
 	port := ":8080"
