@@ -1,77 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { type Todo, TodoItem } from './components/TodoItem';
-
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import { TodoItem } from './components/TodoItem';
+import { useTodos } from './hooks/useTodos';
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTitle, setNewTitle] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const fetchTodos = async () => {
-    try {
-      const res = await fetch(`${API_URL}/todos`);
-      if (res.ok) {
-        const data = await res.json();
-        setTodos(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch todos", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTodos();
-  }, []);
+  const { todos, loading, addTodo, toggleTodo, deleteTodo } = useTodos();
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     
-    // Optimistic UI update
-    const tempId = Date.now();
-    const newTodo: Todo = {
-      id: tempId,
-      title: newTitle,
-      completed: false,
-      created_at: new Date().toISOString()
-    };
-    
-    setTodos(prev => [newTodo, ...prev]);
+    await addTodo(newTitle);
     setNewTitle('');
-    
-    try {
-      await fetch(`${API_URL}/todos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newTitle })
-      });
-      // Re-fetch after actual addition to get true ID from DB
-      fetchTodos();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleToggle = async (id: number) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
-    try {
-      await fetch(`${API_URL}/todos/${id}/toggle`, { method: 'PUT' });
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    setTodos(todos.filter(t => t.id !== id));
-    try {
-      await fetch(`${API_URL}/todos/${id}`, { method: 'DELETE' });
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   return (
@@ -115,8 +56,8 @@ function App() {
               <TodoItem 
                 key={todo.id} 
                 todo={todo} 
-                onToggle={handleToggle}
-                onDelete={handleDelete}
+                onToggle={toggleTodo}
+                onDelete={deleteTodo}
               />
             ))}
           </div>
