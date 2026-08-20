@@ -1,8 +1,8 @@
 # Stage 1: Build the React application
-FROM node:20-alpine AS builder
+FROM node:alpine AS builder
 
-# Enable corepack to use pnpm
-RUN corepack enable
+# Install pnpm globally
+RUN npm install -g pnpm
 
 WORKDIR /app
 
