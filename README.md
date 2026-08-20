@@ -58,40 +58,57 @@ We also split the backend build:
 
 ## 🚀 How to Run the Project
 
-### Prerequisites
-Make sure you have **Docker Desktop** installed and running on your machine.
+You can run this project either fully containerized with Docker, or natively on your local machine for active development.
 
-### Setup
+### Option 1: Running with Docker (Production-Ready)
+
+**Prerequisites:** Ensure **Docker Desktop** is installed and running.
+
 1. Clone this repository.
-2. Create a `.env` file in the root directory (`todoapp-docker/.env`) and add the following:
+2. Create a `.env` file in the **root** directory (`todoapp-docker/.env`) and add:
    ```env
    VITE_API_BASE_URL=http://localhost:8080/api
    ```
 
-### Commands
-
 **Start the Application:**
-This command builds the images (if they haven't been built) and starts the containers in detached mode (background).
 ```bash
 docker-compose up --build -d
 ```
-* The frontend will be available at: [http://localhost](http://localhost)
-* The backend API will be available at: [http://localhost:8080/api](http://localhost:8080/api)
+* Frontend: [http://localhost](http://localhost)
+* Backend API: [http://localhost:8080/api](http://localhost:8080/api)
 
-**View Live Logs:**
-To see what your servers are doing in the background:
-```bash
-docker-compose logs -f
-```
+**Helpful Docker Commands:**
+* View live logs: `docker-compose logs -f`
+* Stop gracefully: `docker-compose down`
+* Complete wipe/reset (Warning!): `docker system prune -a --volumes`
 
-**Stop the Application:**
-Gracefully stops the containers without losing your database data.
-```bash
-docker-compose down
-```
+---
 
-**Complete Clean & Reset (Danger ⚠️):**
-If you ever want to completely wipe your Docker cache, delete old build layers, and force a 100% fresh slate across your entire Docker environment:
-```bash
-docker system prune -a --volumes
-```
+### Option 2: Running Locally without Docker (Development Mode)
+
+**Prerequisites:** Ensure **Node.js** (v22+), **pnpm**, and **Go** (v1.26+) are installed.
+
+1. **Start the Go Backend:**
+   Open a terminal and navigate to the `server` directory:
+   ```bash
+   cd server
+   go mod download
+   go run cmd/server/main.go
+   ```
+   *The server will start on port `8080`.*
+
+2. **Start the React Frontend:**
+   Open a *second* terminal and navigate to the `client` directory:
+   ```bash
+   cd client
+   ```
+   Create a `.env` file in the `client` directory (`todoapp-docker/client/.env`):
+   ```env
+   VITE_API_BASE_URL=http://localhost:8080/api
+   ```
+   Install dependencies and start the Vite dev server:
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
+   *The frontend will start on [http://localhost:5173](http://localhost:5173).*
